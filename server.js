@@ -1,53 +1,24 @@
-const express = import('express');
-const bodyParser = import('body-parser');
-const fetch = import('node-fetch');
+import express from 'express';
+import bodyParser from 'body-parser';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// Replace with the actual file path
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const app = express();
+const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-app.post('/getAccessToken', async (req, res) => {
-  const { clientId, clientSecret, code } = req.body;
-  try {
-    const response = await fetch('https://www.strava.com/api/v3/oauth/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        code: code,
-        grant_type: 'authorization_code'
-      }).toString()
-    });
-    const data = await response.json();
-    if (response.ok) {
-      res.json(data);
-    } else {
-      res.status(response.status).json(data);
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+const fetch = await import('node-fetch');
+
+// Your routes and logic here
+app.get('/', (req, res) => {
+  res.send('Hello, world!');
 });
 
-app.post('/getAthleteData', async (req, res) => {
-  const { accessToken } = req.body;
-  try {
-    const response = await fetch('https://www.strava.com/api/v3/athlete', {
-      method: 'GET',
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
-    const data = await response.json();
-    if (response.ok) {
-      res.json(data);
-    } else {
-      res.status(response.status).json(data);
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
