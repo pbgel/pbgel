@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,7 +15,6 @@ app.post('/getAccessToken', async (req, res) => {
   const { code } = req.body;
   const clientId = process.env.STRAVA_CLIENT_ID;
   const clientSecret = process.env.STRAVA_CLIENT_SECRET;
-  const redirectUri = 'https://www.pbgel.ca';
 
   try {
     const response = await fetch('https://www.strava.com/oauth/token', {
@@ -25,7 +27,6 @@ app.post('/getAccessToken', async (req, res) => {
         client_secret: clientSecret,
         code: code,
         grant_type: 'authorization_code',
-        redirect_uri: redirectUri,
       }),
     });
 
