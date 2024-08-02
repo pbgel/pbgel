@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const corsOptions = {
-  origin: 'https://www.pbgel.ca', // Replace with your frontend URL
+  origin: 'https://www.pbgel.ca', // Replace with your actual frontend URL
   optionsSuccessStatus: 200
 };
 
