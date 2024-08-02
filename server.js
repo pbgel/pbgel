@@ -1,61 +1,48 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
-const { MongoClient } = require('mongodb');
-require('dotenv').config();
+const mongoose = require('mongoose');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
 app.use(cors());
 app.use(express.json());
 
-let db;
-const client = new MongoClient(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.log('Error connecting to MongoDB:', err));
+
+const athleteSchema = new mongoose.Schema({
+  athleteId: Number,
+  refreshToken: String,
+  accessToken: String,
+  tokenExpiry: Number
 });
 
-client.connect()
-  .then(() => {
-    db = client.db();
-    console.log('Connected to MongoDB');
-  })
-  .catch(err => console.error('Error connecting to MongoDB:', err));
+const Athlete = mongoose.model('Athlete', athleteSchema);
 
 app.post('/getAccessToken', async (req, res) => {
   const { clientId, clientSecret, code } = req.body;
-  console.log('Request body:', req.body);
 
   try {
     const response = await fetch('https://www.strava.com/oauth/token', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         client_id: clientId,
         client_secret: clientSecret,
         code: code,
-        grant_type: 'authorization_code',
-      }),
+        grant_type: 'authorization_code'
+      })
     });
 
     const data = await response.json();
-    console.log('Response from Strava:', data);
 
     if (response.ok) {
       const { athlete, access_token, refresh_token, expires_at } = data;
-      await db.collection('users').updateOne(
+      await Athlete.updateOne(
         { athleteId: athlete.id },
-        {
-          $set: {
-            accessToken: access_token,
-            refreshToken: refresh_token,
-            expiresAt: expires_at,
-            athlete: athlete,
-          },
-        },
+        { athleteId: athlete.id, refreshToken: refresh_token, accessToken: access_token, tokenExpiry: expires_at },
         { upsert: true }
       );
       res.json(data);
@@ -70,63 +57,51 @@ app.post('/getAccessToken', async (req, res) => {
 
 app.post('/getAthleteData', async (req, res) => {
   const { athleteId } = req.body;
-  console.log('Received athlete ID:', athleteId);
 
   try {
-    const user = await db.collection('users').findOne({ athleteId: athleteId });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    const athlete = await Athlete.findOne({ athleteId });
+
+    if (!athlete) {
+      return res.status(404).json({ message: 'Athlete not found' });
     }
 
-    const { accessToken, refreshToken, expiresAt } = user;
-    let currentAccessToken = accessToken;
+    const currentTime = Math.floor(Date.now() / 1000);
 
-    if (Date.now() >= expiresAt * 1000) {
-      const response = await fetch('https://www.strava.com/oauth/token', {
+    if (athlete.tokenExpiry < currentTime) {
+      const tokenResponse = await fetch('https://www.strava.com/oauth/token', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           client_id: process.env.STRAVA_CLIENT_ID,
           client_secret: process.env.STRAVA_CLIENT_SECRET,
           grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-        }),
+          refresh_token: athlete.refreshToken
+        })
       });
 
-      const data = await response.json();
-      if (response.ok) {
-        currentAccessToken = data.access_token;
-        await db.collection('users').updateOne(
-          { athleteId: athleteId },
-          {
-            $set: {
-              accessToken: data.access_token,
-              refreshToken: data.refresh_token,
-              expiresAt: data.expires_at,
-            },
-          }
-        );
+      const tokenData = await tokenResponse.json();
+
+      if (tokenResponse.ok) {
+        athlete.accessToken = tokenData.access_token;
+        athlete.refreshToken = tokenData.refresh_token;
+        athlete.tokenExpiry = tokenData.expires_at;
+        await athlete.save();
       } else {
-        return res.status(response.status).json(data);
+        return res.status(tokenResponse.status).json(tokenData);
       }
     }
 
-    const athleteResponse = await fetch('https://www.strava.com/api/v3/athlete', {
+    const response = await fetch('https://www.strava.com/api/v3/athlete', {
       method: 'GET',
-      headers: {
-        Authorization: `Bearer ${currentAccessToken}`,
-      },
+      headers: { Authorization: `Bearer ${athlete.accessToken}` }
     });
 
-    const athleteData = await athleteResponse.json();
-    console.log('Athlete data:', athleteData);
+    const data = await response.json();
 
-    if (athleteResponse.ok) {
-      res.json(athleteData);
+    if (response.ok) {
+      res.json(data);
     } else {
-      res.status(athleteResponse.status).json(athleteData);
+      res.status(response.status).json(data);
     }
   } catch (error) {
     console.error('Error fetching athlete data:', error);
@@ -134,6 +109,7 @@ app.post('/getAthleteData', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
