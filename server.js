@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
+import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -10,6 +11,26 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+const UserSchema = new mongoose.Schema({
+  stravaId: { type: String, required: true, unique: true },
+  accessToken: String,
+  refreshToken: String,
+  expiresAt: Number,
+  firstname: String,
+  lastname: String,
+  city: String,
+  state: String,
+  country: String,
+  profile: String,
+});
+
+const User = mongoose.model('User', UserSchema);
+
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
 app.post('/getAccessToken', async (req, res) => {
   const { code } = req.body;
@@ -36,6 +57,23 @@ app.post('/getAccessToken', async (req, res) => {
     console.log('Response from Strava:', data);
 
     if (response.ok) {
+      const user = await User.findOneAndUpdate(
+        { stravaId: data.athlete.id },
+        {
+          stravaId: data.athlete.id,
+          accessToken: data.access_token,
+          refreshToken: data.refresh_token,
+          expiresAt: data.expires_at,
+          firstname: data.athlete.firstname,
+          lastname: data.athlete.lastname,
+          city: data.athlete.city,
+          state: data.athlete.state,
+          country: data.athlete.country,
+          profile: data.athlete.profile,
+        },
+        { upsert: true, new: true }
+      );
+
       res.json(data);
     } else {
       res.status(response.status).json(data);
