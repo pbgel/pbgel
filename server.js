@@ -12,6 +12,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send('Hello, World!');
@@ -20,7 +21,7 @@ app.get('/', (req, res) => {
 app.get('/strava-auth', async (req, res) => {
   const { code } = req.query;
   if (!code) {
-    return res.status(400).send('Authorization code missing');
+    return res.status(400).json({ error: 'Authorization code missing' });
   }
 
   try {
@@ -38,13 +39,13 @@ app.get('/strava-auth', async (req, res) => {
     });
 
     const data = await response.json();
-    if (data.access_token) {
-      res.send(`Access token: ${data.access_token}`);
+    if (response.ok) {
+      res.json(data);
     } else {
-      res.status(500).send('Failed to obtain access token');
+      res.status(response.status).json(data);
     }
   } catch (error) {
-    res.status(500).send('Error fetching access token');
+    res.status(500).json({ error: 'Error fetching access token' });
   }
 });
 
