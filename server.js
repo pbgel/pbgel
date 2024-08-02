@@ -1,59 +1,44 @@
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+import express from 'express';
+import fetch from 'node-fetch';
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-// Use CORS middleware
-app.use(cors({
-  origin: 'https://www.pbgel.ca' // Replace with your Wix site URL
-}));
-
-app.use(bodyParser.json());
-
-// Define your endpoints
-app.post('/getAccessToken', (req, res) => {
-  const { clientId, clientSecret, code } = req.body;
-
-  const url = 'https://www.strava.com/api/v3/oauth/token';
-  const headers = {
-    'Content-Type': 'application/x-www-form-urlencoded'
-  };
-  const body = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    code: code,
-    grant_type: 'authorization_code'
-  });
-
-  fetch(url, {
-    method: 'POST',
-    headers: headers,
-    body: body.toString()
-  })
-  .then(response => response.json())
-  .then(data => res.json(data))
-  .catch(error => res.status(500).json({ error: error.message }));
+app.get('/', (req, res) => {
+  res.send('Hello, World!');
 });
 
-app.post('/getAthleteData', (req, res) => {
-  const { accessToken } = req.body;
+app.get('/strava-auth', async (req, res) => {
+  const { code } = req.query;
+  if (!code) {
+    return res.status(400).send('Authorization code missing');
+  }
 
-  const url = 'https://www.strava.com/api/v3/athlete';
-  const headers = {
-    'Authorization': `Bearer ${accessToken}`
-  };
+  try {
+    const response = await fetch('https://www.strava.com/api/v3/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        client_id: process.env.CLIENT_ID,
+        client_secret: process.env.CLIENT_SECRET,
+        code,
+        grant_type: 'authorization_code'
+      })
+    });
 
-  fetch(url, {
-    method: 'GET',
-    headers: headers
-  })
-  .then(response => response.json())
-  .then(data => res.json(data))
-  .catch(error => res.status(500).json({ error: error.message }));
+    const data = await response.json();
+    if (data.access_token) {
+      res.send(`Access token: ${data.access_token}`);
+    } else {
+      res.status(500).send('Failed to obtain access token');
+    }
+  } catch (error) {
+    res.status(500).send('Error fetching access token');
+  }
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
