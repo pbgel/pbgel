@@ -1,66 +1,56 @@
 import express from 'express';
-import bodyParser from 'body-parser';
 import fetch from 'node-fetch';
 import cors from 'cors';
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(bodyParser.json());
 app.use(cors());
+app.use(express.json());
 
 app.post('/getAccessToken', async (req, res) => {
   const { clientId, clientSecret, code } = req.body;
-  console.log('Received request:', { clientId, clientSecret, code });
+  
+  console.log('Request body:', req.body);
 
-  const requestBody = {
-    client_id: clientId,
-    client_secret: clientSecret,
-    code: code,
-    grant_type: 'authorization_code'
-  };
+  const response = await fetch('https://www.strava.com/api/v3/oauth/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code: code,
+      grant_type: 'authorization_code',
+    }),
+  });
 
-  try {
-    const response = await fetch('https://www.strava.com/oauth/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody)
-    });
+  const data = await response.json();
+  console.log('Response from Strava:', data);
 
-    const data = await response.json();
-    console.log('Response from Strava:', data);
-
-    if (response.ok) {
-      res.json(data);
-    } else {
-      res.status(response.status).json(data);
-    }
-  } catch (error) {
-    console.error('Error fetching access token:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+  if (response.ok) {
+    res.json(data);
+  } else {
+    res.status(response.status).json(data);
   }
 });
 
 app.post('/getAthleteData', async (req, res) => {
   const { accessToken } = req.body;
 
-  try {
-    const response = await fetch('https://www.strava.com/api/v3/athlete', {
-      method: 'GET',
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
+  const response = await fetch('https://www.strava.com/api/v3/athlete', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+    },
+  });
 
-    const data = await response.json();
-    console.log('Response from Strava:', data);
-
-    if (response.ok) {
-      res.json(data);
-    } else {
-      res.status(response.status).json(data);
-    }
-  } catch (error) {
-    console.error('Error fetching athlete data:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+  const data = await response.json();
+  if (response.ok) {
+    res.json(data);
+  } else {
+    res.status(response.status).json(data);
   }
 });
 
