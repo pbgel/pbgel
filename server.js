@@ -8,7 +8,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Enable CORS for all routes
 app.use(cors());
 app.use(express.json());
 
@@ -16,8 +15,8 @@ app.post('/getAccessToken', async (req, res) => {
   const { code } = req.body;
   const clientId = process.env.STRAVA_CLIENT_ID;
   const clientSecret = process.env.STRAVA_CLIENT_SECRET;
-  
-  console.log('Received code:', code);  // Log the received code
+
+  console.log('Received code:', code);
 
   try {
     const response = await fetch('https://www.strava.com/oauth/token', {
@@ -34,7 +33,7 @@ app.post('/getAccessToken', async (req, res) => {
     });
 
     const data = await response.json();
-    console.log('Response from Strava:', data);  // Log the response from Strava
+    console.log('Response from Strava:', data);
 
     if (response.ok) {
       res.json(data);
@@ -49,7 +48,7 @@ app.post('/getAccessToken', async (req, res) => {
 
 app.post('/getAthleteData', async (req, res) => {
   const { accessToken } = req.body;
-  console.log('Received access token:', accessToken);  // Log the received access token
+  console.log('Received access token:', accessToken);
 
   try {
     const response = await fetch('https://www.strava.com/api/v3/athlete', {
@@ -60,7 +59,7 @@ app.post('/getAthleteData', async (req, res) => {
     });
 
     const data = await response.json();
-    console.log('Athlete data:', data);  // Log the athlete data
+    console.log('Athlete data:', data);
 
     if (response.ok) {
       res.json(data);
