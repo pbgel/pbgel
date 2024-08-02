@@ -4,6 +4,7 @@ import cors from 'cors';
 
 const app = express();
 const port = process.env.PORT || 3000;
+
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 
@@ -12,8 +13,11 @@ app.use(express.json());
 
 app.post('/getAccessToken', async (req, res) => {
   const { code } = req.body;
+  console.log('Received code:', code);
 
-  console.log('Request body:', req.body);
+  if (!code) {
+    return res.status(400).json({ message: 'Authorization code is required' });
+  }
 
   try {
     const response = await fetch('https://www.strava.com/api/v3/oauth/token', {
@@ -45,6 +49,10 @@ app.post('/getAccessToken', async (req, res) => {
 
 app.post('/getAthleteData', async (req, res) => {
   const { accessToken } = req.body;
+
+  if (!accessToken) {
+    return res.status(400).json({ message: 'Access token is required' });
+  }
 
   try {
     const response = await fetch('https://www.strava.com/api/v3/athlete', {
