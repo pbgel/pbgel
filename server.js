@@ -13,16 +13,18 @@ app.post('/getAccessToken', async (req, res) => {
   const { clientId, clientSecret, code } = req.body;
   console.log('Received request:', { clientId, clientSecret, code });
 
+  const requestBody = {
+    client_id: clientId,
+    client_secret: clientSecret,
+    code: code,
+    grant_type: 'authorization_code'
+  };
+
   try {
     const response = await fetch('https://www.strava.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
-        code: code,
-        grant_type: 'authorization_code'
-      })
+      body: JSON.stringify(requestBody)
     });
 
     const data = await response.json();
