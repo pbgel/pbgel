@@ -1,9 +1,9 @@
 import express from 'express';
 import bodyParser from 'body-parser';
+import fetch from 'node-fetch';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
-// Replace with the actual file path
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -12,9 +12,6 @@ const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-const fetch = await import('node-fetch');
-
-// Your routes and logic here
 app.get('/', (req, res) => {
   res.send('Hello, world!');
 });
