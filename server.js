@@ -4,13 +4,15 @@ import cors from 'cors';
 
 const app = express();
 const port = process.env.PORT || 3000;
+const clientId = process.env.CLIENT_ID;
+const clientSecret = process.env.CLIENT_SECRET;
 
 app.use(cors());
 app.use(express.json());
 
 app.post('/getAccessToken', async (req, res) => {
-  const { clientId, clientSecret, code } = req.body;
-  
+  const { code } = req.body;
+
   console.log('Request body:', req.body);
 
   const response = await fetch('https://www.strava.com/api/v3/oauth/token', {
