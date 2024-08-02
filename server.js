@@ -1,19 +1,21 @@
-const express = import('express');
-const cors = import('cors');
-const bodyParser = import('body-parser');
-const fetch = import('node-fetch');
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const fetch = require('node-fetch');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Use CORS middleware
 app.use(cors({
-  origin: 'https://www.pbgel.ca' // Replace with your Wix site URL
+  origin: 'https://www.pbgel.ca', // Allow only your Wix site to access the server
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Use body-parser middleware
 app.use(bodyParser.json());
 
-// Define the /getAccessToken endpoint
 app.post('/getAccessToken', (req, res) => {
   const { clientId, clientSecret, code } = req.body;
 
@@ -38,7 +40,6 @@ app.post('/getAccessToken', (req, res) => {
   .catch(error => res.status(500).json({ error: error.message }));
 });
 
-// Define the /getAthleteData endpoint
 app.post('/getAthleteData', (req, res) => {
   const { accessToken } = req.body;
 
