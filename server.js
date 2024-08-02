@@ -1,19 +1,59 @@
-import express from 'express';
-import bodyParser from 'body-parser';
-import fetch from 'node-fetch';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const express = import('express');
+const cors = import('cors');
+const bodyParser = import('body-parser');
+const fetch = import('node-fetch');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Use CORS middleware
+app.use(cors({
+  origin: 'https://www.pbgel.ca' // Replace with your Wix site URL
+}));
+
 app.use(bodyParser.json());
 
-app.get('/', (req, res) => {
-  res.send('Hello, world!');
+// Define the /getAccessToken endpoint
+app.post('/getAccessToken', (req, res) => {
+  const { clientId, clientSecret, code } = req.body;
+
+  const url = 'https://www.strava.com/api/v3/oauth/token';
+  const headers = {
+    'Content-Type': 'application/x-www-form-urlencoded'
+  };
+  const body = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    code: code,
+    grant_type: 'authorization_code'
+  });
+
+  fetch(url, {
+    method: 'POST',
+    headers: headers,
+    body: body.toString()
+  })
+  .then(response => response.json())
+  .then(data => res.json(data))
+  .catch(error => res.status(500).json({ error: error.message }));
+});
+
+// Define the /getAthleteData endpoint
+app.post('/getAthleteData', (req, res) => {
+  const { accessToken } = req.body;
+
+  const url = 'https://www.strava.com/api/v3/athlete';
+  const headers = {
+    'Authorization': `Bearer ${accessToken}`
+  };
+
+  fetch(url, {
+    method: 'GET',
+    headers: headers
+  })
+  .then(response => response.json())
+  .then(data => res.json(data))
+  .catch(error => res.status(500).json({ error: error.message }));
 });
 
 app.listen(port, () => {
