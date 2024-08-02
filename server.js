@@ -7,6 +7,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const accessTokens = {};
 
 app.use(cors());
 app.use(express.json());
@@ -36,6 +37,7 @@ app.post('/getAccessToken', async (req, res) => {
     console.log('Response from Strava:', data);
 
     if (response.ok) {
+      accessTokens[data.athlete.id] = data.access_token;
       res.json(data);
     } else {
       res.status(response.status).json(data);
@@ -47,8 +49,14 @@ app.post('/getAccessToken', async (req, res) => {
 });
 
 app.post('/getAthleteData', async (req, res) => {
-  const { accessToken } = req.body;
-  console.log('Received access token:', accessToken);
+  const { athleteId } = req.body;
+  const accessToken = accessTokens[athleteId];
+  console.log('Received athlete ID:', athleteId);
+  console.log('Access token:', accessToken);
+
+  if (!accessToken) {
+    return res.status(400).json({ message: 'Access token not found' });
+  }
 
   try {
     const response = await fetch('https://www.strava.com/api/v3/athlete', {
