@@ -10,7 +10,7 @@ app.use(express.json());
 
 app.post('/getAccessToken', async (req, res) => {
   const { clientId, clientSecret, code } = req.body;
-  console.log('Request body:', req.body);
+  console.log('Received code:', code);
 
   try {
     const response = await fetch('https://www.strava.com/oauth/token', {
