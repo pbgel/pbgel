@@ -1,8 +1,17 @@
 import express from 'express';
 import fetch from 'node-fetch';
+import cors from 'cors';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Configure CORS
+const corsOptions = {
+  origin: 'https://www.pbgel.ca', // Replace with your frontend URL
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 
 app.get('/', (req, res) => {
   res.send('Hello, World!');
