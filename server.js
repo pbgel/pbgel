@@ -28,26 +28,18 @@ client.connect()
   .catch(error => console.error('Error connecting to MongoDB:', error));
 
 app.post('/getAccessToken', async (req, res) => {
-  const { clientId, clientSecret, code, refreshToken } = req.body;
-  let url = 'https://www.strava.com/oauth/token';
-  let body = {
-    client_id: clientId,
-    client_secret: clientSecret,
-  };
-
-  if (refreshToken) {
-    body.grant_type = 'refresh_token';
-    body.refresh_token = refreshToken;
-  } else {
-    body.grant_type = 'authorization_code';
-    body.code = code;
-  }
+  const { clientId, clientSecret, code } = req.body;
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch('https://www.strava.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code: code,
+        grant_type: 'authorization_code',
+      }),
     });
 
     const data = await response.json();
@@ -69,27 +61,53 @@ app.post('/getAccessToken', async (req, res) => {
   }
 });
 
+app.post('/refreshAccessToken', async (req, res) => {
+  const { clientId, clientSecret, refreshToken } = req.body;
+
+  try {
+    const response = await fetch('https://www.strava.com/oauth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+      }),
+    });
+
+    const data = await response.json();
+    console.log('Response from Strava:', data);
+
+    if (response.ok) {
+      await athletesCollection.updateOne(
+        { id: data.athlete.id },
+        { $set: data },
+        { upsert: true }
+      );
+      res.json(data);
+    } else {
+      res.status(response.status).json(data);
+    }
+  } catch (error) {
+    console.error('Error refreshing access token:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
 app.post('/getAthleteData', async (req, res) => {
   const { accessToken } = req.body;
-  console.log('Received access token:', accessToken);
 
   try {
     const response = await fetch('https://www.strava.com/api/v3/athlete', {
       method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     const data = await response.json();
     console.log('Athlete data:', data);
 
     if (response.ok) {
-      await athletesCollection.updateOne(
-        { id: data.id },
-        { $set: data },
-        { upsert: true }
-      );
       res.json(data);
     } else {
       res.status(response.status).json(data);
