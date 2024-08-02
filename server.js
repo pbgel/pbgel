@@ -1,19 +1,26 @@
 import express from 'express';
-import cors from 'cors';
 import fetch from 'node-fetch';
+import cors from 'cors';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
+
+const clientId = process.env.CLIENT_ID;
+const clientSecret = process.env.CLIENT_SECRET;
 
 app.use(cors());
 app.use(express.json());
 
 app.post('/getAccessToken', async (req, res) => {
-  const { clientId, clientSecret, code } = req.body;
-  console.log('Request body:', req.body);
+  const { code } = req.body;
+  console.log('Received code:', code);
+
+  if (!code) {
+    return res.status(400).json({ message: 'Authorization code is required' });
+  }
 
   try {
-    const response = await fetch('https://www.strava.com/oauth/token', {
+    const response = await fetch('https://www.strava.com/api/v3/oauth/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,25 +43,26 @@ app.post('/getAccessToken', async (req, res) => {
     }
   } catch (error) {
     console.error('Error fetching access token:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: 'Internal Server Error', error });
   }
 });
 
 app.post('/getAthleteData', async (req, res) => {
   const { accessToken } = req.body;
-  console.log('Received access token:', accessToken);
+
+  if (!accessToken) {
+    return res.status(400).json({ message: 'Access token is required' });
+  }
 
   try {
     const response = await fetch('https://www.strava.com/api/v3/athlete', {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        'Authorization': `Bearer ${accessToken}`,
       },
     });
 
     const data = await response.json();
-    console.log('Athlete data:', data);
-
     if (response.ok) {
       res.json(data);
     } else {
@@ -62,10 +70,10 @@ app.post('/getAthleteData', async (req, res) => {
     }
   } catch (error) {
     console.error('Error fetching athlete data:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: 'Internal Server Error', error });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
