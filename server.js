@@ -16,7 +16,7 @@ app.use(express.json());
 app.post('/getAccessToken', async (req, res) => {
   const { clientId, clientSecret, code } = req.body;
   if (!clientId || !clientSecret || !code) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return res.status(400).json({ error: 'Missing importd fields' });
   }
 
   try {
