@@ -1,9 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,7 +10,9 @@ app.use(express.json());
 
 app.post('/getAccessToken', async (req, res) => {
   const { code } = req.body;
-  console.log('Request body:', req.body);
+  const clientId = process.env.STRAVA_CLIENT_ID;
+  const clientSecret = process.env.STRAVA_CLIENT_SECRET;
+  const redirectUri = 'https://www.pbgel.ca';
 
   try {
     const response = await fetch('https://www.strava.com/oauth/token', {
@@ -22,10 +21,11 @@ app.post('/getAccessToken', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        client_id: process.env.STRAVA_CLIENT_ID,
-        client_secret: process.env.STRAVA_CLIENT_SECRET,
+        client_id: clientId,
+        client_secret: clientSecret,
         code: code,
         grant_type: 'authorization_code',
+        redirect_uri: redirectUri,
       }),
     });
 
@@ -35,7 +35,6 @@ app.post('/getAccessToken', async (req, res) => {
     if (response.ok) {
       res.json(data);
     } else {
-      console.error('Error response from Strava:', data);
       res.status(response.status).json(data);
     }
   } catch (error) {
@@ -46,7 +45,6 @@ app.post('/getAccessToken', async (req, res) => {
 
 app.post('/getAthleteData', async (req, res) => {
   const { accessToken } = req.body;
-  console.log('Received access token:', accessToken);
 
   try {
     const response = await fetch('https://www.strava.com/api/v3/athlete', {
