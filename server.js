@@ -12,6 +12,8 @@ app.use(cors());
 app.post('/getAccessToken', async (req, res) => {
   const { clientId, clientSecret, code } = req.body;
 
+  console.log('Request body:', req.body); // Log the request body
+
   try {
     const response = await fetch('https://www.strava.com/oauth/token', {
       method: 'POST',
