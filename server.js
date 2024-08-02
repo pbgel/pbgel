@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/getAccessToken', async (req, res) => {
-  const { clientId, clientSecret, code } = req.body;
+  const { code } = req.body;
   console.log('Request body:', req.body);
 
   try {
@@ -19,8 +22,8 @@ app.post('/getAccessToken', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
+        client_id: process.env.STRAVA_CLIENT_ID,
+        client_secret: process.env.STRAVA_CLIENT_SECRET,
         code: code,
         grant_type: 'authorization_code',
       }),
