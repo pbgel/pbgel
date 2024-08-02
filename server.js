@@ -16,7 +16,7 @@ app.use(express.json());
 app.post('/getAccessToken', async (req, res) => {
   const { clientId, clientSecret, code } = req.body;
   if (!clientId || !clientSecret || !code) {
-    return res.status(400).json({ error: 'Missing importd fields' });
+    return res.status(400).json({ error: 'Missing required fields' });
   }
 
   try {
@@ -28,7 +28,7 @@ app.post('/getAccessToken', async (req, res) => {
       body: new URLSearchParams({
         client_id: clientId,
         client_secret: clientSecret,
-        code,
+        code: code,
         grant_type: 'authorization_code'
       })
     });
