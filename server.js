@@ -16,7 +16,7 @@ app.use(express.json());
 app.post('/getAccessToken', async (req, res) => {
   const { clientId, clientSecret, code } = req.body;
   if (!clientId || !clientSecret || !code) {
-    return res.status(400).json({ error: 'Missing importd fields' });
+    return res.status(400).json({ error: 'Missing required fields' });
   }
 
   try {
@@ -37,7 +37,7 @@ app.post('/getAccessToken', async (req, res) => {
     if (response.ok) {
       res.json(data);
     } else {
-      res.status(response.status).json(data);
+      res.status(response.status).json({ error: data.message || 'Failed to obtain access token' });
     }
   } catch (error) {
     res.status(500).json({ error: 'Error fetching access token' });
@@ -62,7 +62,7 @@ app.post('/getAthleteData', async (req, res) => {
     if (response.ok) {
       res.json(data);
     } else {
-      res.status(response.status).json(data);
+      res.status(response.status).json({ error: data.message || 'Failed to fetch athlete data' });
     }
   } catch (error) {
     res.status(500).json({ error: 'Error fetching athlete data' });
