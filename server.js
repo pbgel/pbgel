@@ -12,8 +12,6 @@ app.use(cors());
 app.post('/getAccessToken', async (req, res) => {
   const { clientId, clientSecret, code } = req.body;
 
-  console.log('Request body:', req.body); // Log the request body
-
   try {
     const response = await fetch('https://www.strava.com/oauth/token', {
       method: 'POST',
@@ -26,13 +24,13 @@ app.post('/getAccessToken', async (req, res) => {
       })
     });
 
-    const data = await response.json();
-    console.log('Response from Strava:', data); // Log the response from Strava
-
-    if (response.ok) {
-      res.json(data);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error response from Strava:', errorData);
+      res.status(response.status).json(errorData);
     } else {
-      res.status(response.status).json(data);
+      const data = await response.json();
+      res.json(data);
     }
   } catch (error) {
     console.error('Error fetching access token:', error);
@@ -49,13 +47,13 @@ app.post('/getAthleteData', async (req, res) => {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
 
-    const data = await response.json();
-    console.log('Response from Strava:', data); // Log the response from Strava
-
-    if (response.ok) {
-      res.json(data);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error response from Strava:', errorData);
+      res.status(response.status).json(errorData);
     } else {
-      res.status(response.status).json(data);
+      const data = await response.json();
+      res.json(data);
     }
   } catch (error) {
     console.error('Error fetching athlete data:', error);
